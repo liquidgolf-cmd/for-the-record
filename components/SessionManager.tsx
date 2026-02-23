@@ -93,15 +93,15 @@ export default function SessionManager({ userId }: SessionManagerProps) {
         <div className={[
           "inline-flex items-center gap-2 px-4 py-1.5 rounded-full border",
           "text-[10px] tracking-[0.2em] uppercase font-sans select-none transition-all duration-300",
-          isListening ? "border-red/40 text-red/60"
-          : isActive  ? "border-amber/30 text-amber/50"
-          :             "border-cream/[0.08] text-cream/25",
+          isListening ? "border-red/70 text-red/90 bg-red/10"
+          : isActive  ? "border-amber/60 text-amber/80"
+          :             "border-amber/50 text-amber/75 bg-amber/[0.06]",
         ].join(" ")}>
           <span className={[
             "w-1.5 h-1.5 rounded-full transition-all duration-300",
             isListening ? "bg-red animate-pulse"
             : isActive  ? "bg-amber animate-pulse"
-            :             "bg-cream/20",
+            :             "bg-amber/50",
           ].join(" ")} />
           ON AIR
         </div>
@@ -147,7 +147,7 @@ export default function SessionManager({ userId }: SessionManagerProps) {
               ? "bg-red/15 border-red/50 animate-on-air-pulse cursor-default"
               : isProcessing || isSpeaking
               ? "bg-amber/[0.06] border-amber/15 cursor-default opacity-50"
-              : "bg-[#1E1E10] border-amber/20 hover:border-amber/50 hover:bg-[#252515] cursor-pointer",
+              : "bg-[#2A2410] border-amber/35 hover:border-amber/60 hover:bg-[#322C14] cursor-pointer",
           ].join(" ")}
         >
           <Image
@@ -156,17 +156,17 @@ export default function SessionManager({ userId }: SessionManagerProps) {
             width={38}
             height={67}
             className={[
-              "transition-opacity duration-300",
-              isListening  ? "opacity-100"
-              : isActive    ? "opacity-40"
-              :               "opacity-90",
+              "transition-all duration-300",
+              isProcessing || isSpeaking ? "opacity-50 brightness-75"
+              : isListening              ? "opacity-100 brightness-150"
+              :                            "opacity-100 brightness-200",
             ].join(" ")}
           />
           <span className={[
             "text-[10px] tracking-[0.18em] uppercase font-sans mt-0.5 transition-colors duration-300",
-            isListening  ? "text-red/60"
-            : isActive    ? "text-amber/35"
-            :               "text-amber/55",
+            isListening  ? "text-red/80"
+            : isActive    ? "text-amber/60"
+            :               "text-amber/75",
           ].join(" ")}>
             {isListening   ? "Listening"
              : isProcessing ? "Thinking"
