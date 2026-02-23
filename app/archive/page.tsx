@@ -8,6 +8,7 @@ import { useAuth }     from "@/hooks/useAuth";
 import { useStories }  from "@/hooks/useStories";
 import StoryCard       from "@/components/StoryCard";
 import SearchBar       from "@/components/SearchBar";
+import Image           from "next/image";
 import { Story }       from "@/lib/firestore";
 
 export default function ArchivePage() {
@@ -71,8 +72,8 @@ export default function ArchivePage() {
     <div className="min-h-screen bg-studio">
       {/* ── Nav ── */}
       <nav className="flex items-center justify-between px-5 py-4 border-b border-cream/[0.06]">
-        <a href="/" className="font-georgia text-amber tracking-wide text-base font-bold">
-          For the Record
+        <a href="/">
+          <Image src="/logo.png" alt="For the Record" width={40} height={40} className="rounded-md" />
         </a>
         <div className="flex items-center gap-5">
           <span className="text-sm text-cream/70 font-sans">Archive</span>

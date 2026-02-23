@@ -5,7 +5,8 @@ export const metadata: Metadata = {
   title:       "For the Record",
   description: "Your life is worth recording. Every day.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 

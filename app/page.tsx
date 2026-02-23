@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth }   from "@/hooks/useAuth";
 import SessionManager from "@/components/SessionManager";
+import Image          from "next/image";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -31,9 +32,9 @@ export default function Home() {
     <div className="min-h-screen bg-studio flex flex-col">
       {/* ── Nav ── */}
       <nav className="flex items-center justify-between px-5 py-4 border-b border-cream/[0.06]">
-        <span className="font-georgia text-amber tracking-wide text-base font-bold">
-          For the Record
-        </span>
+        <a href="/">
+          <Image src="/logo.png" alt="For the Record" width={40} height={40} className="rounded-md" />
+        </a>
         <div className="flex items-center gap-5">
           <a
             href="/archive"

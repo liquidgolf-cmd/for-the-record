@@ -8,6 +8,7 @@ import { signOut }          from "firebase/auth";
 import { getAuthInstance } from "@/lib/firebase";
 import { useAuth }   from "@/hooks/useAuth";
 import NotificationSettings from "@/components/NotificationSettings";
+import Image                from "next/image";
 
 export default function SettingsPage() {
   const { user, loading } = useAuth();
@@ -36,8 +37,8 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-studio">
       {/* ── Nav ── */}
       <nav className="flex items-center justify-between px-5 py-4 border-b border-cream/[0.06]">
-        <a href="/" className="font-georgia text-amber tracking-wide text-base font-bold">
-          For the Record
+        <a href="/">
+          <Image src="/logo.png" alt="For the Record" width={40} height={40} className="rounded-md" />
         </a>
         <div className="flex items-center gap-5">
           <a href="/archive" className="text-sm text-cream/40 hover:text-amber transition-warm">

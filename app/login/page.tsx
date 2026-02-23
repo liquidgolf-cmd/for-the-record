@@ -8,6 +8,7 @@ import { signInWithPopup }              from "firebase/auth";
 import { getAuthInstance, googleProvider } from "@/lib/firebase";
 import { useAuth }              from "@/hooks/useAuth";
 import { saveUserProfile }      from "@/lib/firestore";
+import Image                   from "next/image";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -61,14 +62,16 @@ export default function LoginPage() {
 
         {/* Brand mark */}
         <div className="mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-red mb-6">
-            <span className="font-georgia font-bold text-white text-xs tracking-widest">
-              ON<br />AIR
-            </span>
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/logo.png"
+              alt="For the Record"
+              width={220}
+              height={220}
+              className="rounded-2xl"
+              priority
+            />
           </div>
-          <h1 className="font-georgia text-3xl font-bold text-cream mb-2">
-            For the Record
-          </h1>
           <p className="text-cream/40 text-sm font-sans leading-relaxed">
             Your life is worth recording. Every day.
           </p>

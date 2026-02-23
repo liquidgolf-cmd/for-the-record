@@ -8,6 +8,7 @@ import { useAuth }     from "@/hooks/useAuth";
 import { getStory }    from "@/lib/firestore";
 import { Story }       from "@/lib/firestore";
 import StoryDetail     from "@/components/StoryDetail";
+import Image           from "next/image";
 
 export default function StoryPage() {
   const { user, loading } = useAuth();
@@ -60,8 +61,8 @@ export default function StoryPage() {
     <div className="min-h-screen bg-studio">
       {/* ── Nav ── */}
       <nav className="flex items-center justify-between px-5 py-4 border-b border-cream/[0.06]">
-        <a href="/" className="font-georgia text-amber tracking-wide text-base font-bold">
-          For the Record
+        <a href="/">
+          <Image src="/logo.png" alt="For the Record" width={40} height={40} className="rounded-md" />
         </a>
         <a href="/archive" className="text-sm text-cream/40 hover:text-amber transition-warm">
           Archive
