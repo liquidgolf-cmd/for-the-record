@@ -62,13 +62,33 @@ export default function LoginPage() {
 
         {/* Brand mark */}
         <div className="mb-10">
+          {/* ON AIR badge */}
+          <div className="flex justify-center mb-5">
+            <Image
+              src="/ftr-on-air.png"
+              alt="ON AIR"
+              width={110}
+              height={41}
+              priority
+            />
+          </div>
+          {/* Vintage microphone */}
+          <div className="flex justify-center mb-5">
+            <Image
+              src="/ftr-mic.png"
+              alt=""
+              width={150}
+              height={263}
+              priority
+            />
+          </div>
+          {/* Wordmark */}
           <div className="flex justify-center mb-6">
             <Image
-              src="/logo.png"
+              src="/ftr-text.png"
               alt="For the Record"
-              width={300}
-              height={300}
-              className="rounded-3xl"
+              width={270}
+              height={47}
               priority
             />
           </div>

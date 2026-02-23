@@ -38,7 +38,7 @@ export default function SettingsPage() {
       {/* ── Nav ── */}
       <nav className="flex items-center justify-between px-5 py-4 border-b border-cream/[0.06]">
         <a href="/">
-          <Image src="/logo.png" alt="For the Record" width={40} height={40} className="rounded-md" />
+          <Image src="/ftr-text.png" alt="For the Record" width={140} height={25} />
         </a>
         <div className="flex items-center gap-5">
           <a href="/archive" className="text-sm text-cream/40 hover:text-amber transition-warm">

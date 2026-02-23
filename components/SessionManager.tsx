@@ -3,21 +3,12 @@
 import { useSession }           from "@/hooks/useSession";
 import { useStories }           from "@/hooks/useStories";
 import { getTodaysOpeningQuestion } from "@/lib/georgia";
+import Image                   from "next/image";
 
 interface SessionManagerProps {
   userId: string;
 }
 
-function MicIcon({ className }: { className?: string }) {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <rect x="9" y="2" width="6" height="11" rx="3" fill="currentColor" />
-      <path d="M5 10a7 7 0 0 0 14 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T12:00:00");
@@ -159,12 +150,18 @@ export default function SessionManager({ userId }: SessionManagerProps) {
               : "bg-[#1E1E10] border-amber/20 hover:border-amber/50 hover:bg-[#252515] cursor-pointer",
           ].join(" ")}
         >
-          <MicIcon className={[
-            "w-7 h-7 transition-colors duration-300",
-            isListening  ? "text-red"
-            : isActive    ? "text-amber/50"
-            :               "text-amber",
-          ].join(" ")} />
+          <Image
+            src="/ftr-mic.png"
+            alt=""
+            width={38}
+            height={67}
+            className={[
+              "transition-opacity duration-300",
+              isListening  ? "opacity-100"
+              : isActive    ? "opacity-40"
+              :               "opacity-90",
+            ].join(" ")}
+          />
           <span className={[
             "text-[10px] tracking-[0.18em] uppercase font-sans mt-0.5 transition-colors duration-300",
             isListening  ? "text-red/60"
