@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ─────────────────────────────────────────────── */
+:root {
+  --studio:      #1A1A1A;
+  --amber:       #C8860A;
+  --amber-light: #E8A020;
+  --cream:       #F5F0E8;
+  --cream-dark:  #E8DFC8;
+  --tobacco:     #7A5C3A;
+  --dark-brown:  #2C1810;
+  --red:         #C0392B;
+}
+
+html,
+body {
+  background-color: var(--studio);
+  color: var(--cream);
+  font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography ───────────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-family: Georgia, serif;
+  color: var(--cream);
+  line-height: 1.25;
+}
+
+/* Georgia serif for brand / editorial use */
+.font-georgia {
+  font-family: Georgia, serif;
+}
+
+/* ── Scrollbar (subtle dark) ──────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--studio);
+}
+::-webkit-scrollbar-thumb {
+  background: #3A3A3A;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tobacco);
+}
+
+/* ── Focus ring (accessible, amber-toned) ─────────────── */
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+
+/* ── ON AIR button shadow utility ─────────────────────── */
+.shadow-red-glow {
+  box-shadow: 0 0 20px 4px rgba(192, 57, 43, 0.6);
+}
+
+.shadow-amber-glow {
+  box-shadow: 0 0 16px 4px rgba(200, 134, 10, 0.5);
+}
+
+/* ── Transitions (warm, never snappy) ─────────────────── */
+.transition-warm {
+  transition-duration: 350ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* ── Story card ───────────────────────────────────────── */
+.story-card {
+  background-color: var(--cream-dark);
+  color: var(--tobacco);
+  border-radius: 4px;
+  transition: transform 350ms ease, box-shadow 350ms ease;
+}
+.story-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Georgia text (spoken words) ─────────────────────── */
+.georgia-text {
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: var(--cream);
+  line-height: 1.8;
+}
+
+/* ── Tag pill ──────────────────────────────────────────── */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: rgba(200, 134, 10, 0.15);
+  color: var(--amber-light);
+  border: 1px solid rgba(200, 134, 10, 0.3);
+}
+
+/* ── Input / Textarea ─────────────────────────────────── */
+.input-warm {
+  background-color: rgba(245, 240, 232, 0.06);
+  border: 1px solid rgba(245, 240, 232, 0.15);
+  border-radius: 4px;
+  color: var(--cream);
+  padding: 10px 14px;
+  font-size: 1rem;
+  width: 100%;
+  transition: border-color 350ms ease;
+}
+.input-warm::placeholder {
+  color: rgba(245, 240, 232, 0.35);
+}
+.input-warm:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
+/* ── Button — primary (amber) ─────────────────────────── */
+.btn-primary {
+  background-color: var(--amber);
+  color: var(--dark-brown);
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 350ms ease, transform 150ms ease;
+  border: none;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+.btn-primary:hover {
+  background-color: var(--amber-light);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ── Button — ghost ───────────────────────────────────── */
+.btn-ghost {
+  background: transparent;
+  color: var(--cream);
+  border: 1px solid rgba(245, 240, 232, 0.2);
+  padding: 10px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color 350ms ease, color 350ms ease;
+}
+.btn-ghost:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+/* ── Divider ──────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid rgba(245, 240, 232, 0.1);
+  margin: 24px 0;
+}
