@@ -62,17 +62,17 @@ export default function LoginPage() {
 
         {/* Brand mark */}
         <div className="mb-10">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-6">
             <Image
               src="/logo.png"
               alt="For the Record"
-              width={220}
-              height={220}
-              className="rounded-2xl"
+              width={300}
+              height={300}
+              className="rounded-3xl"
               priority
             />
           </div>
-          <p className="text-cream/40 text-sm font-sans leading-relaxed">
+          <p className="text-cream/40 text-sm font-sans leading-relaxed tracking-wide">
             Your life is worth recording. Every day.
           </p>
         </div>
