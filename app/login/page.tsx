@@ -61,8 +61,14 @@ export default function LoginPage() {
     try {
       await signInWithRedirect(getAuthInstance(), googleProvider);
       // page navigates away — nothing after this runs
-    } catch {
-      setError("Sign-in failed. Try again.");
+    } catch (e: unknown) {
+      const code = (e as { code?: string }).code ?? "";
+      console.error("[FTR] signInWithRedirect error:", code, e);
+      if (code === "auth/unauthorized-domain") {
+        setError("Domain not authorized. Add fortherecord.loamstrategy.com to Firebase → Authentication → Settings → Authorized domains.");
+      } else {
+        setError(`Sign-in failed. (${code || "unknown"}) — check browser console for details.`);
+      }
       setSigningIn(false);
     }
   }
