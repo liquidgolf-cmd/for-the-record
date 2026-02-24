@@ -27,7 +27,7 @@ export default function SessionManager({ userId }: SessionManagerProps) {
   } = useSession(userId);
 
   const { stories } = useStories(userId);
-  const { state, transcript, currentText, generatedStory, error, ttsAvailable } = session;
+  const { state, transcript, currentText, generatedStory, error, ttsAvailable, ttsError } = session;
 
   const isListening   = state === "listening";
   const isProcessing  = state === "processing" || state === "generating_story";
@@ -130,7 +130,7 @@ export default function SessionManager({ userId }: SessionManagerProps) {
       {/* TTS unavailable notice — shown once voice fails */}
       {!ttsAvailable && state !== "error" && (
         <p className="text-amber/50 text-xs text-center font-sans animate-fade-in">
-          Georgia&rsquo;s voice is unavailable right now — her words are shown above.
+          Voice unavailable ({ttsError ?? "unknown"}) — her words are shown above.
         </p>
       )}
 
