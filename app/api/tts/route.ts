@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GOOGLE_TTS_API_KEY = process.env.GOOGLE_TTS_API_KEY!;
-const TTS_ENDPOINT = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`;
+const GOOGLE_TTS_API_KEY = process.env.GOOGLE_TTS_API_KEY ?? "";
 
 export async function POST(req: NextRequest) {
   try {
+    // Guard: key must be present (helps diagnose missing Vercel env var)
+    if (!GOOGLE_TTS_API_KEY) {
+      console.error("[FTR] GOOGLE_TTS_API_KEY is not set");
+      return NextResponse.json(
+        { error: "TTS not configured (missing API key)" },
+        { status: 503 }
+      );
+    }
+
     const { text }: { text: string } = await req.json();
 
     if (!text?.trim()) {
       return NextResponse.json({ error: "text is required" }, { status: 400 });
     }
+
+    const TTS_ENDPOINT = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`;
 
     // Truncate to Google TTS limit
     const truncatedText = text.slice(0, 5000);
