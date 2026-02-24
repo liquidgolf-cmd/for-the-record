@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter }           from "next/navigation";
-import { signInWithPopup }              from "firebase/auth";
+import { signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { getAuthInstance, googleProvider } from "@/lib/firebase";
 import { useAuth }              from "@/hooks/useAuth";
 import { saveUserProfile }      from "@/lib/firestore";
@@ -13,40 +13,62 @@ import Image                   from "next/image";
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [signingIn, setSigningIn] = useState(false);
-  const [error,     setError]     = useState<string | null>(null);
+  const [signingIn,        setSigningIn]        = useState(false);
+  const [checkingRedirect, setCheckingRedirect] = useState(true);
+  const [error,            setError]            = useState<string | null>(null);
 
+  // Redirect already-logged-in users
   useEffect(() => {
     if (!loading && user) {
       router.replace("/");
     }
   }, [user, loading, router]);
 
+  // Handle the return trip from Google's redirect sign-in
+  useEffect(() => {
+    async function handleRedirectResult() {
+      try {
+        const result = await getRedirectResult(getAuthInstance());
+        if (result?.user) {
+          const u = result.user;
+          await saveUserProfile(u.uid, {
+            name:                 u.displayName || "",
+            email:                u.email       || "",
+            notificationsEnabled: false,
+            notificationTime:     "20:00",
+          });
+          router.replace("/");
+        }
+      } catch (e: unknown) {
+        const code = (e as { code?: string }).code ?? "";
+        if (code === "auth/unauthorized-domain") {
+          setError(
+            "This domain isn't authorized for sign-in. Add it in Firebase Console → Authentication → Settings → Authorized domains."
+          );
+        } else if (code && code !== "auth/null-user" && code !== "auth/no-auth-event") {
+          setError("Sign-in failed. Try again.");
+        }
+      } finally {
+        setCheckingRedirect(false);
+      }
+    }
+    handleRedirectResult();
+  }, [router]);
+
   async function handleGoogleSignIn() {
     setSigningIn(true);
     setError(null);
     try {
-      const result = await signInWithPopup(getAuthInstance(), googleProvider);
-      const u = result.user;
-
-      // Create/update user profile on first sign-in
-      await saveUserProfile(u.uid, {
-        name:                 u.displayName || "",
-        email:                u.email       || "",
-        notificationsEnabled: false,
-        notificationTime:     "20:00",
-      });
-
-      router.replace("/");
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Sign-in failed.";
-      setError(msg.includes("popup-closed") ? null : "Sign-in failed. Try again.");
-    } finally {
+      await signInWithRedirect(getAuthInstance(), googleProvider);
+      // page navigates away — nothing after this runs
+    } catch {
+      setError("Sign-in failed. Try again.");
       setSigningIn(false);
     }
   }
 
-  if (loading) {
+  // Show loading while Firebase checks auth state or processes redirect
+  if (loading || checkingRedirect) {
     return (
       <div className="min-h-screen bg-studio flex items-center justify-center">
         <span className="georgia-text text-cream/30 text-lg animate-pulse">
@@ -110,11 +132,11 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
             <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
           </svg>
-          {signingIn ? "Signing in…" : "Continue with Google"}
+          {signingIn ? "Redirecting…" : "Continue with Google"}
         </button>
 
         {error && (
-          <p className="mt-4 text-sm text-red/70 animate-fade-in">{error}</p>
+          <p className="mt-4 text-sm text-red/70 animate-fade-in leading-relaxed">{error}</p>
         )}
 
         <p className="mt-8 text-xs text-cream/20 font-sans leading-relaxed">
