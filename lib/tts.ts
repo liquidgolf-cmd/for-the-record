@@ -1,19 +1,21 @@
 // TTS client — calls /api/tts (server-side Google TTS proxy)
 //
-// Uses Web Audio API for playback. AudioContext must be created/resumed
-// synchronously inside a user gesture (call unlockAudio() on button tap)
-// before any async work — this is what makes iOS Safari work correctly.
+// Priority chain:
+//   1. Google Neural TTS via /api/tts  (best quality, requires API key)
+//   2. Browser SpeechSynthesis         (always available, no key needed)
+//
+// Call unlockAudio() synchronously inside the button click handler so iOS
+// Safari allows audio playback after the async fetch completes.
 
 let audioCtx: AudioContext | null = null;
 let currentSource: AudioBufferSourceNode | null = null;
 let currentFallbackAudio: HTMLAudioElement | null = null;
+let currentUtterance: SpeechSynthesisUtterance | null = null;
 
-// ── Call this SYNCHRONOUSLY inside the button click handler ──────────────────
-// Creates (or resumes) the AudioContext while the gesture is still active.
-// Once the context is running, speak() can play audio after any amount of
-// async work — iOS won't block it.
+// ── Unlock AudioContext on user gesture (required for iOS Safari) ─────────────
 export function unlockAudio(): void {
   try {
+    if (typeof window === "undefined") return;
     if (!audioCtx) {
       const Ctor =
         window.AudioContext ||
@@ -21,12 +23,64 @@ export function unlockAudio(): void {
           .webkitAudioContext;
       audioCtx = new Ctor();
     }
-    if (audioCtx.state === "suspended") {
-      audioCtx.resume();
-    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
   } catch {
-    // AudioContext not available — will fall back to HTMLAudioElement
+    // AudioContext not available — will use HTMLAudioElement or SpeechSynthesis
   }
+}
+
+// ── Browser SpeechSynthesis fallback ─────────────────────────────────────────
+function speakWithBrowserTTS(
+  text: string,
+  onStart?: () => void,
+  onEnd?: () => void
+): Promise<void> {
+  return new Promise((resolve) => {
+    const synth = window.speechSynthesis;
+
+    // Cancel anything currently speaking
+    synth.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate  = 0.9;
+    utterance.pitch = 0.95;
+    utterance.lang  = "en-US";
+
+    // Pick a warm female voice if available
+    const pickVoice = () => {
+      const voices = synth.getVoices();
+      return (
+        voices.find((v) => v.name === "Samantha")                          ||  // iOS/macOS
+        voices.find((v) => v.name.includes("Google US English Female"))    ||  // Chrome Android
+        voices.find((v) => v.lang === "en-US" && v.name.includes("Female"))||
+        voices.find((v) => v.lang === "en-US" && v.localService)           ||
+        voices.find((v) => v.lang.startsWith("en"))                        ||
+        null
+      );
+    };
+
+    const assignVoiceAndSpeak = () => {
+      const voice = pickVoice();
+      if (voice) utterance.voice = voice;
+      currentUtterance = utterance;
+      utterance.onstart = () => onStart?.();
+      utterance.onend   = () => { currentUtterance = null; onEnd?.(); resolve(); };
+      utterance.onerror = () => { currentUtterance = null; onEnd?.(); resolve(); };
+      synth.speak(utterance);
+    };
+
+    // Voices may not be loaded yet on first call
+    if (synth.getVoices().length > 0) {
+      assignVoiceAndSpeak();
+    } else {
+      synth.onvoiceschanged = () => {
+        synth.onvoiceschanged = null;
+        assignVoiceAndSpeak();
+      };
+      // Fallback if onvoiceschanged never fires (Firefox)
+      setTimeout(assignVoiceAndSpeak, 300);
+    }
+  });
 }
 
 // ── Main speak function ───────────────────────────────────────────────────────
@@ -38,6 +92,7 @@ export async function speak(
 ): Promise<void> {
   stopSpeaking();
 
+  // ── Try Google Neural TTS first ──────────────────────────────────────────
   try {
     const response = await fetch("/api/tts", {
       method:  "POST",
@@ -51,11 +106,10 @@ export async function speak(
 
     const arrayBuffer = await response.arrayBuffer();
 
-    // ── Web Audio API path (preferred — works on iOS after unlockAudio()) ──
+    // Web Audio API path — survives iOS post-fetch autoplay restrictions
     if (audioCtx) {
       if (audioCtx.state === "suspended") await audioCtx.resume();
 
-      // decodeAudioData mutates the buffer, so pass a copy
       const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
       const source  = audioCtx.createBufferSource();
       source.buffer = decoded;
@@ -63,17 +117,13 @@ export async function speak(
       currentSource = source;
 
       return new Promise((resolve) => {
-        source.onended = () => {
-          currentSource = null;
-          onEnd?.();
-          resolve();
-        };
+        source.onended = () => { currentSource = null; onEnd?.(); resolve(); };
         onStart?.();
         source.start(0);
       });
     }
 
-    // ── HTMLAudioElement fallback (desktop browsers without gesture issue) ─
+    // HTMLAudioElement path — desktop browsers
     const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
     const url  = URL.createObjectURL(blob);
     currentFallbackAudio = new Audio(url);
@@ -94,18 +144,29 @@ export async function speak(
       currentFallbackAudio!.play().catch(reject);
     });
 
-  } catch (error) {
-    console.error("[FTR] TTS speak error:", error);
-    onError?.(error instanceof Error ? error : new Error(String(error)));
-    // Still advance — Georgia's words are shown on screen
+  } catch (googleError) {
+    console.warn("[FTR] Google TTS unavailable, using device voice:", googleError);
+
+    // ── Fall back to browser SpeechSynthesis ──────────────────────────────
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      try {
+        await speakWithBrowserTTS(text, onStart, onEnd);
+        return; // Browser TTS worked — don't surface an error
+      } catch (browserError) {
+        console.error("[FTR] Browser TTS also failed:", browserError);
+      }
+    }
+
+    // Both failed — tell the session so UI can show a notice
+    onError?.(googleError instanceof Error ? googleError : new Error(String(googleError)));
     onEnd?.();
   }
 }
 
-// ── Stop whatever is currently playing ───────────────────────────────────────
+// ── Stop all audio ────────────────────────────────────────────────────────────
 export function stopSpeaking(): void {
   if (currentSource) {
-    try { currentSource.stop(); } catch { /* already stopped */ }
+    try { currentSource.stop(); } catch { /* already ended */ }
     currentSource = null;
   }
   if (currentFallbackAudio) {
@@ -113,10 +174,16 @@ export function stopSpeaking(): void {
     currentFallbackAudio.src = "";
     currentFallbackAudio = null;
   }
+  if (currentUtterance && typeof window !== "undefined") {
+    window.speechSynthesis.cancel();
+    currentUtterance = null;
+  }
 }
 
 export function isSpeaking(): boolean {
-  return currentSource !== null || (
-    currentFallbackAudio !== null && !currentFallbackAudio.paused
+  return (
+    currentSource !== null ||
+    (currentFallbackAudio !== null && !currentFallbackAudio.paused) ||
+    (currentUtterance !== null)
   );
 }
