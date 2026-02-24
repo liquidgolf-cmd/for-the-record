@@ -6,7 +6,8 @@ let currentAudio: HTMLAudioElement | null = null;
 export async function speak(
   text: string,
   onStart?: () => void,
-  onEnd?: () => void
+  onEnd?: () => void,
+  onError?: (error: Error) => void
 ): Promise<void> {
   // Stop any in-progress audio
   stopSpeaking();
@@ -44,8 +45,9 @@ export async function speak(
       currentAudio!.play().catch(reject);
     });
   } catch (error) {
-    console.error("TTS speak error:", error);
-    // Silently fail — the text is still displayed on screen
+    console.error("[FTR] TTS speak error:", error);
+    onError?.(error instanceof Error ? error : new Error(String(error)));
+    // Still advance — Georgia's words are shown on screen
     onEnd?.();
   }
 }

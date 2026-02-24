@@ -27,6 +27,7 @@ export interface SessionData {
   generatedStory:   GeneratedStory | null;
   error:            string | null;
   turnCount:        number;
+  ttsAvailable:     boolean;    // false once a TTS failure is detected
 }
 
 const INITIAL_STATE: SessionData = {
@@ -36,6 +37,7 @@ const INITIAL_STATE: SessionData = {
   generatedStory: null,
   error:          null,
   turnCount:      0,
+  ttsAvailable:   true,
 };
 
 export function useSession(userId: string | null) {
@@ -75,7 +77,8 @@ export function useSession(userId: string | null) {
         // Audio ended → start listening
         updateSession({ state: "listening", currentText: "" });
         beginListening();
-      }
+      },
+      () => updateSession({ ttsAvailable: false })
     );
   }, [updateSession]);
 
@@ -153,7 +156,8 @@ export function useSession(userId: string | null) {
           () => {
             updateSession({ state: "listening", currentText: "" });
             beginListening();
-          }
+          },
+          () => updateSession({ ttsAvailable: false })
         );
       }
     } catch (err) {
