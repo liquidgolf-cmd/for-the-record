@@ -1,15 +1,41 @@
 // TTS client — calls /api/tts (server-side Google TTS proxy)
-// Returns a playable Audio object
+//
+// Uses Web Audio API for playback. AudioContext must be created/resumed
+// synchronously inside a user gesture (call unlockAudio() on button tap)
+// before any async work — this is what makes iOS Safari work correctly.
 
-let currentAudio: HTMLAudioElement | null = null;
+let audioCtx: AudioContext | null = null;
+let currentSource: AudioBufferSourceNode | null = null;
+let currentFallbackAudio: HTMLAudioElement | null = null;
 
+// ── Call this SYNCHRONOUSLY inside the button click handler ──────────────────
+// Creates (or resumes) the AudioContext while the gesture is still active.
+// Once the context is running, speak() can play audio after any amount of
+// async work — iOS won't block it.
+export function unlockAudio(): void {
+  try {
+    if (!audioCtx) {
+      const Ctor =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      audioCtx = new Ctor();
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+  } catch {
+    // AudioContext not available — will fall back to HTMLAudioElement
+  }
+}
+
+// ── Main speak function ───────────────────────────────────────────────────────
 export async function speak(
   text: string,
   onStart?: () => void,
   onEnd?: () => void,
   onError?: (error: Error) => void
 ): Promise<void> {
-  // Stop any in-progress audio
   stopSpeaking();
 
   try {
@@ -23,27 +49,51 @@ export async function speak(
       throw new Error(`TTS API error: ${response.status}`);
     }
 
-    const blob = await response.blob();
-    const url  = URL.createObjectURL(blob);
+    const arrayBuffer = await response.arrayBuffer();
 
-    currentAudio = new Audio(url);
+    // ── Web Audio API path (preferred — works on iOS after unlockAudio()) ──
+    if (audioCtx) {
+      if (audioCtx.state === "suspended") await audioCtx.resume();
+
+      // decodeAudioData mutates the buffer, so pass a copy
+      const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+      const source  = audioCtx.createBufferSource();
+      source.buffer = decoded;
+      source.connect(audioCtx.destination);
+      currentSource = source;
+
+      return new Promise((resolve) => {
+        source.onended = () => {
+          currentSource = null;
+          onEnd?.();
+          resolve();
+        };
+        onStart?.();
+        source.start(0);
+      });
+    }
+
+    // ── HTMLAudioElement fallback (desktop browsers without gesture issue) ─
+    const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+    const url  = URL.createObjectURL(blob);
+    currentFallbackAudio = new Audio(url);
 
     return new Promise((resolve, reject) => {
-      currentAudio!.onplay  = () => onStart?.();
-      currentAudio!.onended = () => {
+      currentFallbackAudio!.onplay  = () => onStart?.();
+      currentFallbackAudio!.onended = () => {
         URL.revokeObjectURL(url);
-        currentAudio = null;
+        currentFallbackAudio = null;
         onEnd?.();
         resolve();
       };
-      currentAudio!.onerror = () => {
+      currentFallbackAudio!.onerror = () => {
         URL.revokeObjectURL(url);
-        currentAudio = null;
+        currentFallbackAudio = null;
         reject(new Error("Audio playback failed"));
       };
-
-      currentAudio!.play().catch(reject);
+      currentFallbackAudio!.play().catch(reject);
     });
+
   } catch (error) {
     console.error("[FTR] TTS speak error:", error);
     onError?.(error instanceof Error ? error : new Error(String(error)));
@@ -52,14 +102,21 @@ export async function speak(
   }
 }
 
+// ── Stop whatever is currently playing ───────────────────────────────────────
 export function stopSpeaking(): void {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = "";
-    currentAudio = null;
+  if (currentSource) {
+    try { currentSource.stop(); } catch { /* already stopped */ }
+    currentSource = null;
+  }
+  if (currentFallbackAudio) {
+    currentFallbackAudio.pause();
+    currentFallbackAudio.src = "";
+    currentFallbackAudio = null;
   }
 }
 
 export function isSpeaking(): boolean {
-  return currentAudio !== null && !currentAudio.paused;
+  return currentSource !== null || (
+    currentFallbackAudio !== null && !currentFallbackAudio.paused
+  );
 }

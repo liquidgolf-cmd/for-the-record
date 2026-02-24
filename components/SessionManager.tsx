@@ -3,6 +3,7 @@
 import { useSession }           from "@/hooks/useSession";
 import { useStories }           from "@/hooks/useStories";
 import { getTodaysOpeningQuestion } from "@/lib/georgia";
+import { unlockAudio }          from "@/lib/tts";
 import Image                   from "next/image";
 
 interface SessionManagerProps {
@@ -144,7 +145,7 @@ export default function SessionManager({ userId }: SessionManagerProps) {
       {/* Circular BEGIN button */}
       <div className="flex justify-center">
         <button
-          onClick={!isProcessing && !isSpeaking ? startSession : undefined}
+          onClick={!isProcessing && !isSpeaking ? () => { unlockAudio(); startSession(); } : undefined}
           disabled={isProcessing || isSpeaking}
           aria-label={state === "idle" ? "Begin session" : "Session in progress"}
           className={[
