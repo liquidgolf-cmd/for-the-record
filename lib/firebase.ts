@@ -14,14 +14,14 @@ const firebaseConfig = {
 
 // Guard: only initialize when env vars are present.
 // Prevents failures during Next.js static generation in builds without .env.local
-const isConfigured = !!(
+export const isFirebaseConfigured = !!(
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
   process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 );
 
 function getFirebaseApp() {
-  if (!isConfigured) {
+  if (!isFirebaseConfigured) {
     throw new Error(
       "Firebase not configured. Add NEXT_PUBLIC_FIREBASE_* to .env.local"
     );
@@ -42,7 +42,7 @@ export const googleProvider = new GoogleAuthProvider();
 
 // FCM — browser-only
 export async function getMessagingInstance() {
-  if (typeof window === "undefined" || !isConfigured) return null;
+  if (typeof window === "undefined" || !isFirebaseConfigured) return null;
   const supported = await isSupported();
   if (!supported) return null;
   return getMessaging(getFirebaseApp());

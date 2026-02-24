@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useRouter }           from "next/navigation";
 import { signInWithRedirect, getRedirectResult } from "firebase/auth";
-import { getAuthInstance, googleProvider } from "@/lib/firebase";
+import { getAuthInstance, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 import { useAuth }              from "@/hooks/useAuth";
 import { saveUserProfile }      from "@/lib/firestore";
 import Image                   from "next/image";
@@ -27,6 +27,10 @@ export default function LoginPage() {
   // Handle the return trip from Google's redirect sign-in
   useEffect(() => {
     async function handleRedirectResult() {
+      if (!isFirebaseConfigured) {
+        setCheckingRedirect(false);
+        return;
+      }
       try {
         const result = await getRedirectResult(getAuthInstance());
         if (result?.user) {
@@ -56,6 +60,12 @@ export default function LoginPage() {
   }, [router]);
 
   async function handleGoogleSignIn() {
+    if (!isFirebaseConfigured) {
+      setError(
+        "Firebase not configured. Add NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_PROJECT_ID, and NEXT_PUBLIC_FIREBASE_APP_ID to .env.local, then restart the dev server."
+      );
+      return;
+    }
     setSigningIn(true);
     setError(null);
     try {
@@ -125,7 +135,20 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Sign in */}
+        {/* Sign in / setup message */}
+        {!isFirebaseConfigured ? (
+          <div className="rounded bg-cream/10 border border-cream/20 px-4 py-4 text-left">
+            <p className="text-cream/80 font-sans text-sm font-medium mb-2">
+              Firebase not configured
+            </p>
+            <p className="text-cream/60 text-sm font-sans leading-relaxed">
+              Add <code className="text-cream/80">NEXT_PUBLIC_FIREBASE_API_KEY</code>,{" "}
+              <code className="text-cream/80">NEXT_PUBLIC_FIREBASE_PROJECT_ID</code>, and{" "}
+              <code className="text-cream/80">NEXT_PUBLIC_FIREBASE_APP_ID</code> to{" "}
+              <code className="text-cream/80">.env.local</code>. Get values from Firebase Console → Project Settings → General → Your apps. Restart the dev server after saving.
+            </p>
+          </div>
+        ) : (
         <button
           onClick={handleGoogleSignIn}
           disabled={signingIn}
@@ -140,6 +163,7 @@ export default function LoginPage() {
           </svg>
           {signingIn ? "Redirecting…" : "Continue with Google"}
         </button>
+        )}
 
         {error && (
           <p className="mt-4 text-sm text-red/70 animate-fade-in leading-relaxed">{error}</p>
