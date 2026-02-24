@@ -4,18 +4,17 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter }           from "next/navigation";
-import { signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { signInWithPopup }     from "firebase/auth";
 import { getAuthInstance, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
-import { useAuth }              from "@/hooks/useAuth";
-import { saveUserProfile }      from "@/lib/firestore";
+import { useAuth }             from "@/hooks/useAuth";
+import { saveUserProfile }     from "@/lib/firestore";
 import Image                   from "next/image";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [signingIn,        setSigningIn]        = useState(false);
-  const [checkingRedirect, setCheckingRedirect] = useState(true);
-  const [error,            setError]            = useState<string | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
+  const [error,     setError]     = useState<string | null>(null);
 
   // Redirect already-logged-in users
   useEffect(() => {
@@ -24,67 +23,36 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  // Handle the return trip from Google's redirect sign-in
-  useEffect(() => {
-    async function handleRedirectResult() {
-      if (!isFirebaseConfigured) {
-        setCheckingRedirect(false);
-        return;
-      }
-      try {
-        const result = await getRedirectResult(getAuthInstance());
-        if (result?.user) {
-          const u = result.user;
-          await saveUserProfile(u.uid, {
-            name:                 u.displayName || "",
-            email:                u.email       || "",
-            notificationsEnabled: false,
-            notificationTime:     "20:00",
-          });
-          router.replace("/");
-        }
-      } catch (e: unknown) {
-        const code = (e as { code?: string }).code ?? "";
-        if (code === "auth/unauthorized-domain") {
-          setError(
-            "This domain isn't authorized for sign-in. Add it in Firebase Console → Authentication → Settings → Authorized domains."
-          );
-        } else if (code && code !== "auth/null-user" && code !== "auth/no-auth-event") {
-          setError("Sign-in failed. Try again.");
-        }
-      } finally {
-        setCheckingRedirect(false);
-      }
-    }
-    handleRedirectResult();
-  }, [router]);
-
   async function handleGoogleSignIn() {
-    if (!isFirebaseConfigured) {
-      setError(
-        "Firebase not configured. Add NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_PROJECT_ID, and NEXT_PUBLIC_FIREBASE_APP_ID to .env.local, then restart the dev server."
-      );
-      return;
-    }
     setSigningIn(true);
     setError(null);
     try {
-      await signInWithRedirect(getAuthInstance(), googleProvider);
-      // page navigates away — nothing after this runs
+      const result = await signInWithPopup(getAuthInstance(), googleProvider);
+      const u = result.user;
+      await saveUserProfile(u.uid, {
+        name:                 u.displayName || "",
+        email:                u.email       || "",
+        notificationsEnabled: false,
+        notificationTime:     "20:00",
+      });
+      router.replace("/");
     } catch (e: unknown) {
       const code = (e as { code?: string }).code ?? "";
-      console.error("[FTR] signInWithRedirect error:", code, e);
-      if (code === "auth/unauthorized-domain") {
-        setError("Domain not authorized. Add fortherecord.loamstrategy.com to Firebase → Authentication → Settings → Authorized domains.");
+      console.error("[FTR] signIn error:", code, e);
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+        // user dismissed — no message needed
+      } else if (code === "auth/popup-blocked") {
+        setError("Popup was blocked by your browser. Please allow popups for this site and try again.");
+      } else if (code === "auth/unauthorized-domain") {
+        setError("Domain not authorized — add fortherecord.loamstrategy.com in Firebase Console → Authentication → Settings → Authorized domains.");
       } else {
-        setError(`Sign-in failed. (${code || "unknown"}) — check browser console for details.`);
+        setError(`Sign-in failed. (${code || "unknown"})`);
       }
       setSigningIn(false);
     }
   }
 
-  // Show loading while Firebase checks auth state or processes redirect
-  if (loading || checkingRedirect) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-studio flex items-center justify-center">
         <span className="georgia-text text-cream/30 text-lg animate-pulse">
@@ -100,35 +68,14 @@ export default function LoginPage() {
 
         {/* Brand mark */}
         <div className="mb-10">
-          {/* ON AIR badge */}
           <div className="flex justify-center mb-5">
-            <Image
-              src="/ftr-on-air.png"
-              alt="ON AIR"
-              width={110}
-              height={41}
-              priority
-            />
+            <Image src="/ftr-on-air.png" alt="ON AIR" width={110} height={41} priority />
           </div>
-          {/* Vintage microphone */}
           <div className="flex justify-center mb-5">
-            <Image
-              src="/ftr-mic.png"
-              alt=""
-              width={150}
-              height={263}
-              priority
-            />
+            <Image src="/ftr-mic.png" alt="" width={150} height={263} priority />
           </div>
-          {/* Wordmark */}
           <div className="flex justify-center mb-6">
-            <Image
-              src="/ftr-text.png"
-              alt="For the Record"
-              width={270}
-              height={47}
-              priority
-            />
+            <Image src="/ftr-text.png" alt="For the Record" width={270} height={47} priority />
           </div>
           <p className="text-cream/40 text-sm font-sans leading-relaxed tracking-wide">
             Your life is worth recording. Every day.
@@ -149,20 +96,19 @@ export default function LoginPage() {
             </p>
           </div>
         ) : (
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={signingIn}
-          className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded bg-cream text-dark-brown font-sans font-semibold text-sm transition-warm hover:bg-cream-dark active:scale-[0.98] disabled:opacity-60"
-        >
-          {/* Google icon */}
-          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
-            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
-            <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
-            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
-          </svg>
-          {signingIn ? "Redirecting…" : "Continue with Google"}
-        </button>
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={signingIn}
+            className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded bg-cream text-dark-brown font-sans font-semibold text-sm transition-warm hover:bg-cream-dark active:scale-[0.98] disabled:opacity-60"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+              <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+              <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+            </svg>
+            {signingIn ? "Signing in…" : "Continue with Google"}
+          </button>
         )}
 
         {error && (
