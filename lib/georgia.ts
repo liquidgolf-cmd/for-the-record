@@ -15,11 +15,16 @@ Rules:
 
 // ── Opening questions — rotate by day of year ─────────
 const OPENING_QUESTIONS: string[] = [
-  "What's one thing from today that's still on your mind?",
-  "Tell me about a moment today that caught you off guard.",
-  "Who did you talk to today that meant something to you?",
-  "What's something you did today that you want to remember?",
-  "What surprised you today — big or small?",
+  "What from today is still with you — a moment, a feeling, a conversation, anything at all?",
+  "What's lingering from today — something you saw, felt, said, or wondered about?",
+  "What moment from today do you find yourself returning to?",
+  "Something from today is still with you. What is it?",
+  "What from today hasn't quite let go of you yet?",
+  "What did today stir in you — big or small, expected or not?",
+  "What's still alive in you from today — a thought, a feeling, a face, a moment?",
+  "What did you carry home from today without meaning to?",
+  "If today left a mark on you, what would it be?",
+  "What's one thing from today you don't want to lose?",
 ];
 
 export function getTodaysOpeningQuestion(): string {
