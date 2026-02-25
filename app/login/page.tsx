@@ -75,7 +75,7 @@ export default function LoginPage() {
             <Image src="/ftr-mic.png" alt="" width={150} height={263} priority />
           </div>
           <div className="flex justify-center mb-6">
-            <Image src="/ftr-text.png" alt="For the Record" width={270} height={47} priority />
+            <Image src="/ftr-logo-horiz.png" alt="For the Record" width={600} height={465} priority />
           </div>
           <p className="text-cream/40 text-sm font-sans leading-relaxed tracking-wide">
             Your life is worth recording. Every day.

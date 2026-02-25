@@ -53,13 +53,14 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-studio flex flex-col">
       {/* ── Nav ── */}
-      <nav className="flex items-center justify-between px-5 py-4 border-b border-cream/[0.06]">
+      <nav className="flex items-center justify-between px-5 py-0 border-b border-cream/[0.06]">
         <a href="/">
-          <Image src="/ftr-text.png" alt="For the Record" width={140} height={25} />
+          <Image src="/ftr-logo-horiz.png" alt="For the Record" width={172} height={132} />
         </a>
         <div className="flex items-center gap-5">
           <a href="/archive"  className="text-sm text-cream/40 hover:text-amber transition-warm">Archive</a>
           <a href="/settings" className="text-sm text-cream/40 hover:text-amber transition-warm">Settings</a>
+          <a href="https://loamstrategy.com" className="text-sm text-cream/40 hover:text-amber transition-warm">loamstrategy.com</a>
         </div>
       </nav>
 

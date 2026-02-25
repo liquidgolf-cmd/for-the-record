@@ -36,15 +36,16 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-studio">
       {/* ── Nav ── */}
-      <nav className="flex items-center justify-between px-5 py-4 border-b border-cream/[0.06]">
+      <nav className="flex items-center justify-between px-5 py-0 border-b border-cream/[0.06]">
         <a href="/">
-          <Image src="/ftr-text.png" alt="For the Record" width={140} height={25} />
+          <Image src="/ftr-logo-horiz.png" alt="For the Record" width={172} height={132} />
         </a>
         <div className="flex items-center gap-5">
           <a href="/archive" className="text-sm text-cream/40 hover:text-amber transition-warm">
             Archive
           </a>
           <span className="text-sm text-cream/70">Settings</span>
+          <a href="https://loamstrategy.com" className="text-sm text-cream/40 hover:text-amber transition-warm">loamstrategy.com</a>
         </div>
       </nav>
 
